@@ -6,18 +6,21 @@ import { fetchData } from "@/lib/fetch-util";
 import { useAuth } from "@/provider/auth-context";
 import type { Workspace } from "@/types";
 import { useState } from "react";
-import { Navigate, Outlet } from "react-router";
+import { Navigate, Outlet, useLoaderData } from "react-router";
 
 export const clientLoader = async () => {
   try {
-    const [workspaces] = await Promise.all([fetchData("/workspaces")]);
+    const [workspaces] = await Promise.all([fetchData<Workspace[]>("/workspaces")]);
     return { workspaces };
   } catch (error) {
     console.log(error);
+    return { workspaces: [] };
   }
 };
+
 const DashboardLayout = () => {
   const { isAuthenticated, isLoading } = useAuth();
+  const { workspaces } = useLoaderData() as { workspaces: Workspace[] };
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | null>(
     null
@@ -28,7 +31,7 @@ const DashboardLayout = () => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/sign-in" />;
+    return <Navigate to="/sign-in" /> ;
   }
 
   const handleWorkspaceSelected = (workspace: Workspace) => {
@@ -44,6 +47,7 @@ const DashboardLayout = () => {
           onWorkspaceSelected={handleWorkspaceSelected}
           selectedWorkspace={currentWorkspace}
           onCreateWorkspace={() => setIsCreatingWorkspace(true)}
+          workspaces={workspaces}
         />
 
         <main className="flex-1 overflow-y-auto h-full w-full">

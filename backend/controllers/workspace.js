@@ -193,8 +193,8 @@ const getWorkspaceStats = async (req, res) => {
     // populate
 
     for (const project of projects) {
-      for (const task in project.tasks) {
-        const taskDate = new Date(task.updatedAt);
+      for (const task of project.tasks) { // Changed 'in' to 'of'
+    const taskDate = new Date(task.updatedAt);
 
         const dayInDate = last7Days.findIndex(
           (date) =>
