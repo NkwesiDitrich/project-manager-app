@@ -46,7 +46,7 @@ const PORT = process.env.PORT || 5000;
 // Routes
 app.get("/", async (req, res) => {
   res.status(200).json({
-    message: "Welcome to TaskHub API",
+    message: "Welcome to Tasco API",
   });
 });
 

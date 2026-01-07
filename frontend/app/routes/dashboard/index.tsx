@@ -47,7 +47,7 @@ const Dashboard = () => {
     return (
       <div className="flex h-[60vh] items-center justify-center">
         <div className="text-center space-y-4">
-          <h1 className="text-3xl font-bold text-gray-800">Welcome to TaskHub!</h1>
+          <h1 className="text-3xl font-bold text-gray-800">Welcome to Tasco!</h1>
           <p className="text-gray-500 max-w-md mx-auto">
             It looks like you haven't selected a workspace yet. 
             Please <strong>create a new workspace</strong> or select an existing one from the header to view your dashboard statistics.
