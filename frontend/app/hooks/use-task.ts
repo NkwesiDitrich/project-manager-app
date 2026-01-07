@@ -73,6 +73,7 @@ export const useUpdateTaskDescriptionMutation = () => {
       queryClient.invalidateQueries({
         queryKey: ["task-activity", data._id],
       });
+       queryClient.invalidateQueries({ queryKey: ["achievements"] });
     },
   });
 };

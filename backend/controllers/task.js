@@ -4,6 +4,7 @@ import Comment from "../models/comment.js";
 import Project from "../models/project.js";
 import Task from "../models/task.js";
 import Workspace from "../models/workspace.js";
+import { updateGamification } from "../libs/gamification.js";
 
 const createTask = async (req, res) => {
   try {
@@ -197,47 +198,45 @@ const updateTaskStatus = async (req, res) => {
     const { status } = req.body;
 
     const task = await Task.findById(taskId);
-
-    if (!task) {
-      return res.status(404).json({
-        message: "Task not found",
-      });
-    }
+    if (!task) return res.status(404).json({ message: "Task not found" });
 
     const project = await Project.findById(task.project);
-
-    if (!project) {
-      return res.status(404).json({
-        message: "Project not found",
-      });
-    }
+    if (!project) return res.status(404).json({ message: "Project not found" });
 
     const isMember = project.members.some(
       (member) => member.user.toString() === req.user._id.toString()
     );
-
-    if (!isMember) {
-      return res.status(403).json({
-        message: "You are not a member of this project",
-      });
-    }
+    if (!isMember) return res.status(403).json({ message: "Unauthorized" });
 
     const oldStatus = task.status;
-
     task.status = status;
     await task.save();
 
-    // record activity
+    // Record activity
     await recordActivity(req.user._id, "updated_task", "Task", taskId, {
       description: `updated task status from ${oldStatus} to ${status}`,
     });
 
+    // --- IMPROVED DYNAMIC XP LOGIC ---
+    // We update gamification for EVERY status change to keep XP accurate
+    // This handles both marking as "Done" and unmarking it.
+    
+    // 1. Update the person who performed the action
+    await updateGamification(req.user._id);
+    
+    // 2. Update all assignees to ensure their XP matches their current "Done" task count
+    if (task.assignees && task.assignees.length > 0) {
+      const otherAssignees = task.assignees.filter(
+        (id) => id.toString() !== req.user._id.toString()
+      );
+      const updatePromises = otherAssignees.map((userId) => updateGamification(userId));
+      await Promise.all(updatePromises);
+    }
+
     res.status(200).json(task);
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({
-      message: "Internal server error",
-    });
+    console.error("Error updating task status:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 const updateTaskAssignees = async (req, res) => {

@@ -58,3 +58,10 @@ export const useAcceptGenerateInviteMutation = () => {
       postData(`/workspaces/${workspaceId}/accept-generate-invite`, {}),
   });
 };
+
+export const useGetAchievementsQuery = (workspaceId: string | null) => {
+  return useQuery({
+    queryKey: ["achievements", workspaceId],
+    queryFn: async () => fetchData(`achievements${workspaceId ? `?workspaceId=${workspaceId}` : ""}`),
+  });
+};
