@@ -26,6 +26,8 @@ export const useGetWorkspaceStatsQuery = (workspaceId: string) => {
   return useQuery({
     queryKey: ["workspace", workspaceId, "stats"],
     queryFn: async () => fetchData(`/workspaces/${workspaceId}/stats`),
+    // FIX: Only run this query if we have a real ID
+    enabled: !!workspaceId && workspaceId !== "null", 
   });
 };
 
@@ -65,3 +67,4 @@ export const useGetAchievementsQuery = (workspaceId: string | null) => {
     queryFn: async () => fetchData(`achievements${workspaceId ? `?workspaceId=${workspaceId}` : ""}`),
   });
 };
+

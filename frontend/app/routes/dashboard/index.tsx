@@ -19,7 +19,7 @@ const Dashboard = () => {
   const [searchParams] = useSearchParams();
   const workspaceId = searchParams.get("workspaceId");
 
-  // We fetch the stats using the workspaceId from the URL
+  // Fetch stats - this query is automatically disabled if workspaceId is null
   const { data, isPending } = useGetWorkspaceStatsQuery(workspaceId as string) as {
     data: {
       stats: StatsCardProps;
@@ -33,17 +33,9 @@ const Dashboard = () => {
     isPending: boolean;
   };
 
-  // 1. Show loader while the data is being fetched
-  if (isPending) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <Loader />
-      </div>
-    );
-  }
-
-  // 2. SAFETY FIX: If no workspace is selected or data is missing, show a welcome screen
-  if (!workspaceId || !data || !data.stats) {
+  // 1. FIRST CHECK: If no workspace is selected, show the Welcome screen immediately.
+  // This prevents the app from trying to load data that doesn't exist.
+  if (!workspaceId || workspaceId === "null") {
     return (
       <div className="flex h-[60vh] items-center justify-center">
         <div className="text-center space-y-4">
@@ -57,7 +49,21 @@ const Dashboard = () => {
     );
   }
 
-  // 3. Render the full dashboard once data is available
+  // 2. SECOND CHECK: Show loader only if we have a workspaceId but the data is still fetching.
+  if (isPending) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Loader />
+      </div>
+    );
+  }
+
+  // 3. THIRD CHECK: Safety check for missing data
+  if (!data || !data.stats) {
+    return <div className="text-center p-10">No data found for this workspace.</div>;
+  }
+
+  // 4. FINAL RENDER: Show the full dashboard
   return (
     <div className="space-y-8 2xl:space-y-12">
       <div className="flex items-center justify-between">

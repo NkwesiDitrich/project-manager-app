@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UseProjectQuery } from "@/hooks/use-project";
 import { getProjectProgress } from "@/lib";
 import { cn } from "@/lib/utils";
-import type { Project, Task, TaskStatus } from "@/types";
+import type { Project, Task, TaskStatus, User } from "@/types";
 import { format } from "date-fns";
 import { AlertCircle, Calendar, CheckCircle, Clock } from "lucide-react";
 import { useState } from "react";
@@ -30,6 +30,7 @@ const ProjectDetails = () => {
     data: {
       tasks: Task[];
       project: Project;
+      workspaceMembers: { user: User; role: string }[]; // Added this
     };
     isLoading: boolean;
   };
@@ -41,7 +42,8 @@ const ProjectDetails = () => {
       </div>
     );
 
-  const { project, tasks } = data;
+  // Destructure workspaceMembers here
+  const { project, tasks, workspaceMembers } = data;
   const projectProgress = getProjectProgress(tasks);
 
   const handleTaskClick = (taskId: string) => {
@@ -178,7 +180,7 @@ const ProjectDetails = () => {
         open={isCreateTask}
         onOpenChange={setIsCreateTask}
         projectId={projectId!}
-        projectMembers={project.members as any}
+        projectMembers={workspaceMembers as any} // Changed from project.members to workspaceMembers
       />
     </div>
   );
