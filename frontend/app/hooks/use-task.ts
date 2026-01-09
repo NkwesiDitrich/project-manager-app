@@ -211,9 +211,14 @@ export const useAchievedTaskMutation = () => {
   });
 };
 
-export const useGetMyTasksQuery = () => {
+export const useGetMyTasksQuery = (workspaceId?: string | null) => {
   return useQuery({
-    queryKey: ["my-tasks", "user"],
-    queryFn: () => fetchData("/tasks/my-tasks"),
+    queryKey: ["my-tasks", "user", workspaceId ?? "all"],
+    queryFn: () =>
+      fetchData(
+        `/tasks/my-tasks${
+          workspaceId && workspaceId !== "null" ? `?workspaceId=${workspaceId}` : ""
+        }`
+      ),
   });
 };

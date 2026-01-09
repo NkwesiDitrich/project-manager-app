@@ -26,8 +26,8 @@ export const useGetWorkspaceStatsQuery = (workspaceId: string) => {
   return useQuery({
     queryKey: ["workspace", workspaceId, "stats"],
     queryFn: async () => fetchData(`/workspaces/${workspaceId}/stats`),
-    // FIX: Only run this query if we have a real ID
-    enabled: !!workspaceId && workspaceId !== "null", 
+    // Only run this query if we have a real (non-"null") ID
+    enabled: !!workspaceId && workspaceId !== "null",
   });
 };
 
@@ -62,9 +62,19 @@ export const useAcceptGenerateInviteMutation = () => {
 };
 
 export const useGetAchievementsQuery = (workspaceId: string | null) => {
+  const resolvedWorkspaceId =
+    workspaceId && workspaceId !== "null" ? workspaceId : null;
+
   return useQuery({
-    queryKey: ["achievements", workspaceId],
-    queryFn: async () => fetchData(`achievements${workspaceId ? `?workspaceId=${workspaceId}` : ""}`),
+    queryKey: ["achievements", resolvedWorkspaceId ?? "none"],
+    queryFn: async () =>
+      fetchData(
+        `achievements${
+          resolvedWorkspaceId ? `?workspaceId=${resolvedWorkspaceId}` : ""
+        }`
+      ),
+    // Only fetch when we have a real workspace selected
+    enabled: !!resolvedWorkspaceId,
   });
 };
 

@@ -12,7 +12,13 @@ import { Loader } from "@/components/loader";
 // Fix for TypeScript mismatch with React 19
 const MotionDiv = motion.div as any;
 
-const AchievementIcon = ({ name, className }: { name: string; className?: string }) => {
+const AchievementIcon = ({
+  name,
+  className,
+}: {
+  name: string;
+  className?: string;
+}) => {
   const icons: Record<string, any> = {
     Trophy,
     Medal,
@@ -27,8 +33,24 @@ const AchievementIcon = ({ name, className }: { name: string; className?: string
 export default function AchievementsPage() {
   const [searchParams] = useSearchParams();
   const workspaceId = searchParams.get("workspaceId");
-  
-  // Fetch data using the dynamic React Query hook
+
+  // If no workspace is selected, show the same welcome message as Dashboard/My Tasks
+  if (!workspaceId || workspaceId === "null") {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <div className="text-center space-y-4">
+          <h1 className="text-3xl font-bold text-gray-800">Welcome to Tasco!</h1>
+          <p className="text-gray-500 max-w-md mx-auto">
+            It looks like you haven't selected a workspace yet. Please{" "}
+            <strong>create a new workspace</strong> or select an existing one from
+            the header to view your achievements and leaderboard for that workspace.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Fetch data using the dynamic React Query hook (now only when a real workspaceId exists)
   const { data, isLoading } = useGetAchievementsQuery(workspaceId);
 
   if (isLoading) {
@@ -36,7 +58,11 @@ export default function AchievementsPage() {
   }
 
   // Fallback to empty objects if data is not yet available
-  const { userStats = { xp: 0, level: 1, streak: 0, badges: [] }, leaderboard = [], allBadges = [] } = (data as any) || {};
+  const {
+    userStats = { xp: 0, level: 1, streak: 0, badges: [] },
+    leaderboard = [],
+    allBadges = [],
+  } = (data as any) || {};
 
   return (
     <div className="p-4 md:p-8 space-y-8 max-w-7xl mx-auto">

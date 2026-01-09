@@ -618,7 +618,24 @@ const achievedTask = async (req, res) => {
 
 const getMyTasks = async (req, res) => {
   try {
-    const tasks = await Task.find({ assignees: { $in: [req.user._id] } })
+    const { workspaceId } = req.query;
+
+    const baseQuery = { assignees: { $in: [req.user._id] } };
+
+    let query = baseQuery;
+
+    // If a workspaceId is provided, limit tasks to projects in that workspace
+    if (workspaceId) {
+      const projects = await Project.find({ workspace: workspaceId }).select("_id");
+      const projectIds = projects.map((project) => project._id);
+
+      query = {
+        ...baseQuery,
+        project: { $in: projectIds },
+      };
+    }
+
+    const tasks = await Task.find(query)
       .populate("project", "title workspace")
       .sort({ createdAt: -1 });
 

@@ -2,6 +2,8 @@ import User from "../models/user.js";
 import Badge from "../models/badge.js";
 import UserBadge from "../models/user-badge.js";
 import Workspace from "../models/workspace.js";
+import Project from "../models/project.js";
+import Task from "../models/task.js";
 
 export const getAchievements = async (req, res) => {
   try {
@@ -9,32 +11,90 @@ export const getAchievements = async (req, res) => {
     const { workspaceId } = req.query;
 
     const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Badges remain global for now (earned across all workspaces)
     const userBadges = await UserBadge.find({ user: userId }).populate("badge");
 
+    let allBadges = await Badge.find();
+
+    // Default user stats (global, used when no workspace is specified)
+    let userStats = {
+      xp: user.xp,
+      points: user.points,
+      level: user.level,
+      streak: user.streak,
+      badges: userBadges,
+    };
+
     let leaderboard = [];
+
+    // If a workspaceId is provided, compute XP/level/leaderboard ONLY from that workspace
     if (workspaceId) {
       const workspace = await Workspace.findById(workspaceId);
+
       if (workspace) {
-        const memberIds = workspace.members.map(m => m.user);
-        leaderboard = await User.find({ _id: { $in: memberIds } })
-          .sort({ xp: -1 })
-          .limit(10)
-          .select("name profilePicture xp level");
+        // All projects in this workspace
+        const projects = await Project.find({ workspace: workspaceId }).select("_id");
+        const projectIds = projects.map((p) => p._id);
+
+        // 1) Workspace-specific stats for the current user
+        const completedTasksCountForUser = await Task.countDocuments({
+          assignees: userId,
+          status: "Done",
+          project: { $in: projectIds },
+        });
+
+        const workspaceXp = completedTasksCountForUser * 10;
+        const workspaceLevel = Math.floor(workspaceXp / 100) + 1;
+
+        userStats = {
+          xp: workspaceXp,
+          points: user.points, // still global points
+          level: workspaceLevel,
+          streak: user.streak, // streak is still global
+          badges: userBadges,
+        };
+
+        // 2) Workspace-specific leaderboard
+        const memberIds = workspace.members.map((m) => m.user);
+        const members = await User.find({ _id: { $in: memberIds } }).select(
+          "name profilePicture"
+        );
+
+        const leaderboardWithXp = await Promise.all(
+          members.map(async (member) => {
+            const completedTasksForMember = await Task.countDocuments({
+              assignees: member._id,
+              status: "Done",
+              project: { $in: projectIds },
+            });
+
+            const memberXp = completedTasksForMember * 10;
+            const memberLevel = Math.floor(memberXp / 100) + 1;
+
+            return {
+              _id: member._id,
+              name: member.name,
+              profilePicture: member.profilePicture,
+              xp: memberXp,
+              level: memberLevel,
+            };
+          })
+        );
+
+        leaderboard = leaderboardWithXp
+          .sort((a, b) => b.xp - a.xp)
+          .slice(0, 10);
       }
     }
 
-    const allBadges = await Badge.find();
-
     res.status(200).json({
-      userStats: { 
-        xp: user.xp, 
-        points: user.points, 
-        level: user.level, 
-        streak: user.streak, 
-        badges: userBadges 
-      },
+      userStats,
       leaderboard,
-      allBadges
+      allBadges,
     });
   } catch (error) {
     console.error(error);

@@ -28,6 +28,8 @@ import { Link, useSearchParams } from "react-router";
 const MyTasks = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const workspaceId = searchParams.get("workspaceId");
+
   const initialFilter = searchParams.get("filter") || "all";
   const initialSort = searchParams.get("sort") || "desc";
   const initialSearch = searchParams.get("search") || "";
@@ -50,7 +52,7 @@ const MyTasks = () => {
     params.search = search;
 
     setSearchParams(params, { replace: true });
-  }, [filter, sortDirection, search]);
+  }, [filter, sortDirection, search, searchParams, setSearchParams]);
 
   useEffect(() => {
     const urlFilter = searchParams.get("filter") || "all";
@@ -63,7 +65,23 @@ const MyTasks = () => {
     if (urlSearch !== search) setSearch(urlSearch);
   }, [searchParams]);
 
-  const { data: myTasks, isLoading } = useGetMyTasksQuery() as {
+  // If no workspace is selected, show a friendly message instead of tasks
+  if (!workspaceId || workspaceId === "null") {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <div className="text-center space-y-4">
+          <h1 className="text-3xl font-bold text-gray-800">Welcome to Tasco!</h1>
+          <p className="text-gray-500 max-w-md mx-auto">
+            It looks like you haven't selected a workspace yet. Please{" "}
+            <strong>create a new workspace</strong> or select an existing one from
+            the header to view your dashboard statistics.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const { data: myTasks, isLoading } = useGetMyTasksQuery(workspaceId) as {
     data: Task[];
     isLoading: boolean;
   };
