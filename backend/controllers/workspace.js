@@ -52,9 +52,10 @@ const getWorkspaceDetails = async (req, res) => {
   try {
     const { workspaceId } = req.params;
 
-    const workspace = await Workspace.findById({
-      _id: workspaceId,
-    }).populate("members.user", "name email profilePicture");
+    const workspace = await Workspace.findById(workspaceId).populate(
+      "members.user",
+      "name email profilePicture"
+    );
 
     if (!workspace) {
       return res.status(404).json({
@@ -63,7 +64,10 @@ const getWorkspaceDetails = async (req, res) => {
     }
 
     res.status(200).json(workspace);
-  } catch (error) {}
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 };
 
 const getWorkspaceProjects = async (req, res) => {
@@ -530,6 +534,63 @@ const acceptInviteByToken = async (req, res) => {
     });
   }
 };
+
+// Remove a member from the workspace (only owner can remove members)
+const removeMember = async (req, res) => {
+  try {
+    const { workspaceId, userId } = req.params;
+
+    const workspace = await Workspace.findById(workspaceId);
+    if (!workspace) {
+      return res.status(404).json({ message: "Workspace not found" });
+    }
+
+    const requesterMember = workspace.members.find(
+      (m) => m.user.toString() === req.user._id.toString()
+    );
+    if (!requesterMember || requesterMember.role !== "owner") {
+      return res.status(403).json({
+        message: "Only the workspace owner can remove members",
+      });
+    }
+
+    const memberToRemove = workspace.members.find(
+      (m) => m.user.toString() === userId
+    );
+    if (!memberToRemove) {
+      return res.status(404).json({ message: "Member not found in this workspace" });
+    }
+
+    if (memberToRemove.role === "owner") {
+      return res.status(400).json({
+        message: "Cannot remove the workspace owner",
+      });
+    }
+
+    workspace.members = workspace.members.filter(
+      (m) => m.user.toString() !== userId
+    );
+    await workspace.save();
+
+    await recordActivity(
+      req.user._id,
+      "removed_member",
+      "Workspace",
+      workspaceId,
+      {
+        description: `Removed a member from ${workspace.name}`,
+      }
+    );
+
+    res.status(200).json({ message: "Member removed successfully" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
 export {
   createWorkspace,
   getWorkspaces,
@@ -539,4 +600,5 @@ export {
   inviteUserToWorkspace,
   acceptGenerateInvite,
   acceptInviteByToken,
+  removeMember,
 };

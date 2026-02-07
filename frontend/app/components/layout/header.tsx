@@ -1,18 +1,18 @@
 import { useAuth } from "@/provider/auth-context";
 import type { Workspace } from "@/types";
+import { Bell, Menu, Plus } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "../ui/button";
-import { Bell, PlusCircle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuTrigger,
+  DropdownMenuGroup,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuItem,
-  DropdownMenuGroup,
+  DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
-import { Link, useLocation, useNavigate } from "react-router";
 import { WorkspaceAvatar } from "../workspace/workspace-avatar";
 
 interface HeaderProps {
@@ -20,6 +20,7 @@ interface HeaderProps {
   selectedWorkspace: Workspace | null;
   onCreateWorkspace: () => void;
   workspaces: Workspace[];
+  onMenuClick?: () => void;
 }
 
 export const Header = ({
@@ -27,103 +28,133 @@ export const Header = ({
   selectedWorkspace,
   onCreateWorkspace,
   workspaces = [],
+  onMenuClick,
 }: HeaderProps) => {
   const navigate = useNavigate();
-
   const { user, logout } = useAuth();
   const isOnWorkspacePage = useLocation().pathname.includes("/workspace");
 
-  const handleOnClick = (workspace: Workspace) => {
+  const handleWorkspaceClick = (workspace: Workspace) => {
     onWorkspaceSelected(workspace);
-    const location = window.location;
-
     if (isOnWorkspacePage) {
       navigate(`/workspaces/${workspace._id}`);
     } else {
-      const basePath = location.pathname;
-
+      const basePath = window.location.pathname;
       navigate(`${basePath}?workspaceId=${workspace._id}`);
     }
   };
 
   return (
-    <div className="bg-background sticky top-0 z-40 border-b">
-      <div className="flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8 py-4">
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 sm:gap-4 border-b border-border bg-background/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:px-6 lg:px-8">
+      <div className="flex flex-1 items-center justify-between gap-2 min-w-0">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          {onMenuClick && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-9 shrink-0 rounded-lg text-muted-foreground hover:text-foreground md:hidden"
+              onClick={onMenuClick}
+              aria-label="Open menu"
+            >
+              <Menu className="size-5" />
+            </Button>
+          )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant={"outline"}>
+            <Button
+              variant="outline"
+              className="h-9 min-w-0 gap-2 rounded-lg border-border/80 bg-background px-3 font-medium text-foreground hover:bg-muted/50 hover:border-border"
+            >
               {selectedWorkspace ? (
                 <>
-                  {selectedWorkspace.color && (
-                    <WorkspaceAvatar
-                      color={selectedWorkspace.color}
-                      name={selectedWorkspace.name}
-                    />
-                  )}
-                  <span className="font-medium">{selectedWorkspace?.name}</span>
+                  <WorkspaceAvatar
+                    color={selectedWorkspace.color}
+                    name={selectedWorkspace.name}
+                  />
+                  <span className="truncate max-w-[140px] sm:max-w-[200px]">
+                    {selectedWorkspace.name}
+                  </span>
                 </>
               ) : (
-                <span className="font-medium">Select Workspace</span>
+                <span className="text-muted-foreground">Select workspace</span>
               )}
             </Button>
           </DropdownMenuTrigger>
-
-          <DropdownMenuContent>
-            <DropdownMenuLabel>Workspace</DropdownMenuLabel>
+          <DropdownMenuContent align="start" className="w-56 rounded-xl">
+            <DropdownMenuLabel className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
+              Workspaces
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
-
             <DropdownMenuGroup>
               {workspaces.map((ws) => (
                 <DropdownMenuItem
                   key={ws._id}
-                  onClick={() => handleOnClick(ws)}
+                  onClick={() => handleWorkspaceClick(ws)}
+                  className="gap-2 rounded-lg py-2"
                 >
-                  {ws.color && (
-                    <WorkspaceAvatar color={ws.color} name={ws.name} />
-                  )}
-                  <span className="ml-2">{ws.name}</span>
+                  <WorkspaceAvatar color={ws.color} name={ws.name} />
+                  <span className="truncate">{ws.name}</span>
                 </DropdownMenuItem>
               ))}
             </DropdownMenuGroup>
-
-            <DropdownMenuGroup>
-              <DropdownMenuItem onClick={onCreateWorkspace}>
-                <PlusCircle className="w-4 h-4 mr-2" />
-                Create Workspace
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={onCreateWorkspace}
+              className="gap-2 rounded-lg py-2 text-primary focus:text-primary"
+            >
+              <Plus className="size-4" />
+              Create workspace
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        </div>
 
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon">
-            <Bell />
+        <div className="flex items-center gap-1 shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-9 rounded-lg text-muted-foreground hover:text-foreground"
+            aria-label="Notifications"
+          >
+            <Bell className="size-4" />
           </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="rounded-full border p-1 w-8 h-8">
-                <Avatar className="w-8 h-8">
+              <button
+                type="button"
+                className="rounded-lg ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                aria-label="Account menu"
+              >
+                <Avatar className="size-8 rounded-lg border border-border">
                   <AvatarImage src={user?.profilePicture} alt={user?.name} />
-                  <AvatarFallback className="bg-primary text-primary-foreground">
+                  <AvatarFallback className="rounded-lg bg-primary/10 text-primary text-sm font-medium">
                     {user?.name?.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
               </button>
             </DropdownMenuTrigger>
-
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuContent align="end" className="w-52 rounded-xl">
+              <DropdownMenuLabel className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
+                Account
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <Link to="/user/profile">Profile</Link>
+              <DropdownMenuItem asChild>
+                <Link to="/user/profile" className="rounded-lg py-2 cursor-pointer">
+                  Profile
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout}>Log Out</DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={logout}
+                className="rounded-lg py-2 text-destructive focus:text-destructive cursor-pointer"
+              >
+                Log out
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
-    </div>
+    </header>
   );
-};
+}

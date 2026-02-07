@@ -9,8 +9,7 @@ import { motion } from "framer-motion";
 import { useGetAchievementsQuery } from "@/hooks/use-workspace";
 import { Loader } from "@/components/loader";
 
-// Fix for TypeScript mismatch with React 19
-const MotionDiv = motion.div as any;
+const MotionDiv = motion.div as React.ComponentType<React.HTMLAttributes<HTMLDivElement>>;
 
 const AchievementIcon = ({
   name,

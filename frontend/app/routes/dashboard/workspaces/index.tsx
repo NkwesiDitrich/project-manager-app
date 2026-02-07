@@ -12,44 +12,56 @@ import { CreateWorkspace } from "@/components/workspace/create-workspace";
 import { WorkspaceAvatar } from "@/components/workspace/workspace-avatar";
 import { useGetWorkspacesQuery } from "@/hooks/use-workspace";
 import type { Workspace } from "@/types";
-import { PlusCircle, Users } from "lucide-react";
-import { useState } from "react";
-import { Link, useLoaderData } from "react-router";
 import { format } from "date-fns";
+import { Plus, Users } from "lucide-react";
+import { useState } from "react";
+import { Link } from "react-router";
 
 const Workspaces = () => {
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
-  const { data: workspaces, isLoading } = useGetWorkspacesQuery() as {
-    data: Workspace[];
+  const { data: workspaces = [], isLoading } = useGetWorkspacesQuery() as {
+    data: Workspace[] | undefined;
     isLoading: boolean;
   };
 
   if (isLoading) {
-    return <Loader />;
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <Loader />
+      </div>
+    );
   }
 
   return (
     <>
-      <div className="space-y-8">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl md:text-3xl font-bold">Workspaces</h2>
-
-          <Button onClick={() => setIsCreatingWorkspace(true)}>
-            <PlusCircle className="size-4 mr-2" />
-            New Workspace
+      <div className="space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Workspaces</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Create and manage your workspaces
+            </p>
+          </div>
+          <Button
+            onClick={() => setIsCreatingWorkspace(true)}
+            size="lg"
+            className="gap-2"
+          >
+            <Plus className="size-4" />
+            New workspace
           </Button>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {workspaces.map((ws) => (
             <WorkspaceCard key={ws._id} workspace={ws} />
           ))}
 
           {workspaces.length === 0 && (
             <NoDataFound
-              title="No workspaces found"
-              description="Create a new workspace to get started"
-              buttonText="Create Workspace"
+              title="No workspaces"
+              description="Create a workspace to organize projects and collaborate."
+              buttonText="Create workspace"
               buttonAction={() => setIsCreatingWorkspace(true)}
             />
           )}
@@ -66,36 +78,34 @@ const Workspaces = () => {
 
 const WorkspaceCard = ({ workspace }: { workspace: Workspace }) => {
   return (
-    <Link to={`/workspaces/${workspace._id}`}>
-      <Card className="transition-all hover:shadow-md hover:-translate-y-1">
+    <Link to={`/workspaces/${workspace._id}`} className="block transition-transform hover:-translate-y-0.5">
+      <Card className="h-full overflow-hidden border-border transition-shadow hover:shadow-md">
         <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <div className="flex gap-2">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
               <WorkspaceAvatar name={workspace.name} color={workspace.color} />
-
-              <div>
-                <CardTitle>{workspace.name}</CardTitle>
-                <span className="text-xs text-muted-foreground">
-                  Created at {format(workspace.createdAt, "MMM d, yyyy h:mm a")}
-                </span>
+              <div className="min-w-0">
+                <CardTitle className="truncate text-base">
+                  {workspace.name}
+                </CardTitle>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {format(new Date(workspace.createdAt), "MMM d, yyyy")}
+                </p>
               </div>
             </div>
-
-            <div className="flex items-center text-muted-foreground">
-              <Users className="size-4 mr-1" />
-              <span className="text-xs">{workspace.members.length}</span>
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <Users className="size-4 shrink-0" />
+              <span className="text-xs font-medium">{workspace.members?.length ?? 0}</span>
             </div>
           </div>
-
-          <CardDescription>
+          <CardDescription className="mt-2 line-clamp-2">
             {workspace.description || "No description"}
           </CardDescription>
         </CardHeader>
-
         <CardContent>
-          <div className="text-sm text-muted-foreground">
-            View workspace details and projects
-          </div>
+          <p className="text-sm text-muted-foreground">
+            View details and projects
+          </p>
         </CardContent>
       </Card>
     </Link>

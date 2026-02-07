@@ -9,12 +9,11 @@ const registerUser = async (req, res) => {
   try {
     const { email, name, password } = req.body;
 
-    const decision = await aj.protect(req, { email });
-    console.log("Arcjet decision", decision.isDenied());
-
-    if (decision.isDenied()) {
-      res.writeHead(403, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ message: "Invalid email address" }));
+    if (process.env.ARCJET_KEY) {
+      const decision = await aj.protect(req, { email });
+      if (decision.isDenied()) {
+        return res.status(403).json({ message: "Invalid email address" });
+      }
     }
 
     const existingUser = await User.findOne({ email });
@@ -92,7 +91,9 @@ const loginUser = async (req, res) => {
             "Email not verified. Please check your email for the verification link.",
         });
       } else {
-        await Verification.findByIdAndDelete(existingVerification._id);
+        if (existingVerification) {
+          await Verification.findByIdAndDelete(existingVerification._id);
+        }
 
         const verificationToken = jwt.sign(
           { userId: user._id, purpose: "email-verification" },

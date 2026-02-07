@@ -47,13 +47,31 @@ export const useUpdateTaskStatusMutation = () => {
   return useMutation({
     mutationFn: (data: { taskId: string; status: TaskStatus }) =>
       updateData(`/tasks/${data.taskId}/status`, { status: data.status }),
+    onMutate: async ({ taskId, status }) => {
+      await queryClient.cancelQueries({ queryKey: ["my-tasks"] });
+      const previous = queryClient.getQueriesData({ queryKey: ["my-tasks"] });
+      queryClient.setQueriesData(
+        { queryKey: ["my-tasks"] },
+        (old: any[] | undefined) => {
+          if (!Array.isArray(old)) return old;
+          return old.map((t) =>
+            t._id === taskId ? { ...t, status } : t
+          );
+        }
+      );
+      return { previous };
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["project"] });
+      queryClient.invalidateQueries({ queryKey: ["achievements"] });
+    },
     onSuccess: (data: any) => {
-      queryClient.invalidateQueries({
-        queryKey: ["task", data._id],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["task-activity", data._id],
-      });
+      queryClient.invalidateQueries({ queryKey: ["task", data._id] });
+      queryClient.invalidateQueries({ queryKey: ["task-activity", data._id] });
     },
   });
 };
@@ -201,12 +219,9 @@ export const useAchievedTaskMutation = () => {
     mutationFn: (data: { taskId: string }) =>
       postData(`/tasks/${data.taskId}/achieved`, {}),
     onSuccess: (data: any) => {
-      queryClient.invalidateQueries({
-        queryKey: ["task", data._id],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["task-activity", data._id],
-      });
+      queryClient.invalidateQueries({ queryKey: ["task", data._id] });
+      queryClient.invalidateQueries({ queryKey: ["task-activity", data._id] });
+      queryClient.invalidateQueries({ queryKey: ["achievements"] });
     },
   });
 };
@@ -220,5 +235,7 @@ export const useGetMyTasksQuery = (workspaceId?: string | null) => {
           workspaceId && workspaceId !== "null" ? `?workspaceId=${workspaceId}` : ""
         }`
       ),
+    staleTime: 30_000, // 30 seconds - reduce refetches
+    gcTime: 5 * 60 * 1000, // 5 min cache
   });
 };

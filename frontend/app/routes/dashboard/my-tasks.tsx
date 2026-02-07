@@ -1,3 +1,4 @@
+import { TasksBoardView } from "@/components/task/tasks-board-view";
 import { Loader } from "@/components/loader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useDebounce } from "@/hooks/use-debounce";
 import { useGetMyTasksQuery } from "@/hooks/use-task";
 import type { Task } from "@/types";
 import { format } from "date-fns";
@@ -39,6 +41,7 @@ const MyTasks = () => {
     initialSort === "asc" ? "asc" : "desc"
   );
   const [search, setSearch] = useState<string>(initialSearch);
+  const debouncedSearch = useDebounce(search, 300);
 
   useEffect(() => {
     const params: Record<string, string> = {};
@@ -101,8 +104,8 @@ const MyTasks = () => {
           })
           .filter(
             (task) =>
-              task.title.toLowerCase().includes(search.toLowerCase()) ||
-              task.description?.toLowerCase().includes(search.toLowerCase())
+              task.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+              task.description?.toLowerCase().includes(debouncedSearch.toLowerCase())
           )
       : [];
 
@@ -129,15 +132,11 @@ const MyTasks = () => {
       </div>
     );
   return (
-    <div className="space-y-6">
-      <div className="flex items-start md:items-center justify-between">
-        <h1 className="text-2xl font-bold">My Tasks</h1>
+    <div className="space-y-6 min-w-0">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-xl sm:text-2xl font-bold">My Tasks</h1>
 
-        <div
-          className="flex flex-col items-start md:flex-row md"
-          itemScope
-          gap-2
-        >
+        <div className="flex flex-col items-stretch sm:flex-row sm:items-center gap-2">
           <Button
             variant={"outline"}
             onClick={() =>
@@ -184,13 +183,13 @@ const MyTasks = () => {
         placeholder="Search tasks ...."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="max-w-md"
+        className="w-full max-w-md min-w-0"
       />
 
-      <Tabs defaultValue="list">
-        <TabsList>
-          <TabsTrigger value="list">List View</TabsTrigger>
-          <TabsTrigger value="board">Board View</TabsTrigger>
+      <Tabs defaultValue="list" className="w-full min-w-0">
+        <TabsList className="flex flex-wrap w-full sm:w-auto">
+          <TabsTrigger value="list" className="flex-1 sm:flex-none">List View</TabsTrigger>
+          <TabsTrigger value="board" className="flex-1 sm:flex-none">Board View</TabsTrigger>
         </TabsList>
 
         {/* LIST VIEW */}
@@ -281,165 +280,13 @@ const MyTasks = () => {
           </Card>
         </TabsContent>
 
-        {/* BOARD VIEW */}
+        {/* BOARD VIEW - Trello-style drag and drop */}
         <TabsContent value="board">
-          <div className="grid grid-cols-1 md:grid-cols-3  gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  To Do
-                  <Badge variant={"outline"}>{todoTasks?.length}</Badge>
-                </CardTitle>
-              </CardHeader>
-
-              <CardContent className="p-3 space-y-3 max-h-[600px] overflow-y-auto">
-                {todoTasks?.map((task) => (
-                  <Card
-                    key={task._id}
-                    className="hover:shadow-md transition-shadow"
-                  >
-                    <Link
-                      to={`/workspaces/${task.project.workspace}/projects/${task.project._id}/tasks/${task._id}`}
-                      className="block"
-                    >
-                      <h3 className="font-medium">{task.title}</h3>
-                      <p className="text-sm text-muted-foreground line-clamp-3">
-                        {task.description || "No description "}
-                      </p>
-
-                      <div className="flex items-center mt-2 gap-2">
-                        <Badge
-                          variant={
-                            task.priority === "High"
-                              ? "destructive"
-                              : "secondary"
-                          }
-                        >
-                          {task.priority}
-                        </Badge>
-
-                        {task.dueDate && (
-                          <span className="text-sm text-muted-foreground">
-                            {format(task.dueDate, "PPPP")}
-                          </span>
-                        )}
-                      </div>
-                    </Link>
-                  </Card>
-                ))}
-
-                {todoTasks?.length === 0 && (
-                  <div className="p-4 text-center text-sm text-muted-foreground">
-                    No tasks found
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  In Progress
-                  <Badge variant={"outline"}>{inProgressTasks?.length}</Badge>
-                </CardTitle>
-              </CardHeader>
-
-              <CardContent className="p-3 space-y-3 max-h-[600px] overflow-y-auto">
-                {inProgressTasks?.map((task) => (
-                  <Card
-                    key={task._id}
-                    className="hover:shadow-md transition-shadow"
-                  >
-                    <Link
-                      to={`/workspaces/${task.project.workspace}/projects/${task.project._id}/tasks/${task._id}`}
-                      className="block"
-                    >
-                      <h3 className="font-medium">{task.title}</h3>
-                      <p className="text-sm text-muted-foreground line-clamp-3">
-                        {task.description || "No description "}
-                      </p>
-
-                      <div className="flex items-center mt-2 gap-2">
-                        <Badge
-                          variant={
-                            task.priority === "High"
-                              ? "destructive"
-                              : "secondary"
-                          }
-                        >
-                          {task.priority}
-                        </Badge>
-
-                        {task.dueDate && (
-                          <span className="text-sm text-muted-foreground">
-                            {format(task.dueDate, "PPPP")}
-                          </span>
-                        )}
-                      </div>
-                    </Link>
-                  </Card>
-                ))}
-
-                {inProgressTasks?.length === 0 && (
-                  <div className="p-4 text-center text-sm text-muted-foreground">
-                    No tasks found
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  Done
-                  <Badge variant={"outline"}>{doneTasks?.length}</Badge>
-                </CardTitle>
-              </CardHeader>
-
-              <CardContent className="p-3 space-y-3 max-h-[600px] overflow-y-auto">
-                {doneTasks?.map((task) => (
-                  <Card
-                    key={task._id}
-                    className="hover:shadow-md transition-shadow"
-                  >
-                    <Link
-                      to={`/workspaces/${task.project.workspace}/projects/${task.project._id}/tasks/${task._id}`}
-                      className="block"
-                    >
-                      <h3 className="font-medium">{task.title}</h3>
-                      <p className="text-sm text-muted-foreground line-clamp-3">
-                        {task.description || "No description "}
-                      </p>
-
-                      <div className="flex items-center mt-2 gap-2">
-                        <Badge
-                          variant={
-                            task.priority === "High"
-                              ? "destructive"
-                              : "secondary"
-                          }
-                        >
-                          {task.priority}
-                        </Badge>
-
-                        {task.dueDate && (
-                          <span className="text-sm text-muted-foreground">
-                            {format(task.dueDate, "PPPP")}
-                          </span>
-                        )}
-                      </div>
-                    </Link>
-                  </Card>
-                ))}
-
-                {doneTasks?.length === 0 && (
-                  <div className="p-4 text-center text-sm text-muted-foreground">
-                    No tasks found
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+          <TasksBoardView
+            todoTasks={todoTasks}
+            inProgressTasks={inProgressTasks}
+            doneTasks={doneTasks}
+          />
         </TabsContent>
       </Tabs>
     </div>

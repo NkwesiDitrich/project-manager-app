@@ -1,6 +1,6 @@
 import type { WorkspaceForm } from "@/components/workspace/create-workspace";
-import { fetchData, postData } from "@/lib/fetch-util";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { deleteData, fetchData, postData } from "@/lib/fetch-util";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const useCreateWorkspace = () => {
   return useMutation({
@@ -12,6 +12,7 @@ export const useGetWorkspacesQuery = () => {
   return useQuery({
     queryKey: ["workspaces"],
     queryFn: async () => fetchData("/workspaces"),
+    staleTime: 30_000,
   });
 };
 
@@ -26,8 +27,8 @@ export const useGetWorkspaceStatsQuery = (workspaceId: string) => {
   return useQuery({
     queryKey: ["workspace", workspaceId, "stats"],
     queryFn: async () => fetchData(`/workspaces/${workspaceId}/stats`),
-    // Only run this query if we have a real (non-"null") ID
     enabled: !!workspaceId && workspaceId !== "null",
+    staleTime: 20_000,
   });
 };
 
@@ -58,6 +59,17 @@ export const useAcceptGenerateInviteMutation = () => {
   return useMutation({
     mutationFn: (workspaceId: string) =>
       postData(`/workspaces/${workspaceId}/accept-generate-invite`, {}),
+  });
+};
+
+export const useRemoveMemberMutation = (workspaceId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) =>
+      deleteData(`/workspaces/${workspaceId}/members/${userId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId] });
+    },
   });
 };
 

@@ -97,7 +97,7 @@ const TaskDetails = () => {
   };
 
   return (
-    <div className="container mx-auto p-0 py-4 md:px-4">
+    <div className="w-full max-w-full mx-auto p-0 py-4 md:px-4 min-w-0">
       <div className="flex flex-col md:flex-row items-center justify-between mb-6">
         <div className="flex flex-col md:flex-row md:items-center">
           <BackButton />
@@ -144,8 +144,8 @@ const TaskDetails = () => {
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6">
-        <div className="lg:col-span-2">
+      <div className="flex flex-col lg:flex-row gap-6 min-w-0">
+        <div className="lg:col-span-2 min-w-0 flex-1">
           <div className="bg-card rounded-lg p-6 shadow-sm mb-6">
             <div className="flex flex-col md:flex-row justify-between items-start mb-4">
               <div>
@@ -212,7 +212,7 @@ const TaskDetails = () => {
         </div>
 
         {/* right side */}
-        <div className="w-full">
+        <div className="w-full min-w-0 lg:max-w-sm">
           <Watchers watchers={task.watchers || []} />
 
           <TaskActivity resourceId={task._id} />

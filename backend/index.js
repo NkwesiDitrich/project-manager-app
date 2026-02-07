@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 import express from "express";
 import mongoose from "mongoose";
 import morgan from "morgan";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import routes from "./routes/index.js";
 
@@ -21,13 +23,26 @@ app.use(
 app.use(morgan("dev"));
 app.use(express.json());
 
-// Improved DB connection with faster timeout and better error messaging
+// Static files for chat uploads
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const uploadsDir = path.join(__dirname, "uploads");
+
+// Create uploads directory if it doesn't exist
+import fs from "fs";
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+app.use(
+  "/api-v1/uploads",
+  express.static(uploadsDir)
+);
+
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI, {
-      // If it can't connect in 5 seconds, fail. 
-      // This prevents the 30-second "hanging" you were experiencing.
-      serverSelectionTimeoutMS: 5000, 
+      serverSelectionTimeoutMS: 5000,
     });
     console.log("✅ DB Connected successfully.");
   } catch (err) {
@@ -41,7 +56,8 @@ const connectDB = async () => {
 
 connectDB();
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3001;
+const HOST = process.env.HOST || (process.env.PORT ? "0.0.0.0" : "127.0.0.1");
 
 // Routes
 app.get("/", async (req, res) => {
@@ -65,6 +81,6 @@ app.use((req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+app.listen(PORT, HOST, () => {
+  console.log(`🚀 Server running at http://${HOST}:${PORT}`);
 });

@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UseProjectQuery } from "@/hooks/use-project";
+import { useUpdateTaskStatusMutation } from "@/hooks/use-task";
 import { getProjectProgress } from "@/lib";
 import { cn } from "@/lib/utils";
 import type { Project, Task, TaskStatus, User } from "@/types";
@@ -25,6 +26,7 @@ const ProjectDetails = () => {
 
   const [isCreateTask, setIsCreateTask] = useState(false);
   const [taskFilter, setTaskFilter] = useState<TaskStatus | "All">("All");
+  const updateTaskStatus = useUpdateTaskStatusMutation();
 
   const { data, isLoading } = UseProjectQuery(projectId!) as {
     data: {
@@ -80,10 +82,10 @@ const ProjectDetails = () => {
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
-        <Tabs defaultValue="all" className="w-full">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <TabsList>
+      <div className="flex flex-col items-stretch w-full">
+        <Tabs defaultValue="all" className="w-full min-w-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-6">
+            <TabsList className="flex flex-wrap gap-1 w-full sm:w-auto">
               <TabsTrigger value="all" onClick={() => setTaskFilter("All")}>
                 All Tasks
               </TabsTrigger>
@@ -101,9 +103,9 @@ const ProjectDetails = () => {
               </TabsTrigger>
             </TabsList>
 
-            <div className="flex items-center text-sm">
+            <div className="flex flex-wrap items-center gap-2 text-sm">
               <span className="text-muted-foreground">Status:</span>
-              <div>
+              <div className="flex flex-wrap gap-1">
                 <Badge variant="outline" className="bg-background">
                   {tasks.filter((task) => task.status === "To Do").length} To Do
                 </Badge>
@@ -119,23 +121,26 @@ const ProjectDetails = () => {
           </div>
 
           <TabsContent value="all" className="m-0">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               <TaskColumn
                 title="To Do"
                 tasks={tasks.filter((task) => task.status === "To Do")}
                 onTaskClick={handleTaskClick}
+                onStatusChange={updateTaskStatus.mutate}
               />
 
               <TaskColumn
                 title="In Progress"
                 tasks={tasks.filter((task) => task.status === "In Progress")}
                 onTaskClick={handleTaskClick}
+                onStatusChange={updateTaskStatus.mutate}
               />
 
               <TaskColumn
                 title="Done"
                 tasks={tasks.filter((task) => task.status === "Done")}
                 onTaskClick={handleTaskClick}
+                onStatusChange={updateTaskStatus.mutate}
               />
             </div>
           </TabsContent>
@@ -146,6 +151,7 @@ const ProjectDetails = () => {
                 title="To Do"
                 tasks={tasks.filter((task) => task.status === "To Do")}
                 onTaskClick={handleTaskClick}
+                onStatusChange={updateTaskStatus.mutate}
                 isFullWidth
               />
             </div>
@@ -157,6 +163,7 @@ const ProjectDetails = () => {
                 title="In Progress"
                 tasks={tasks.filter((task) => task.status === "In Progress")}
                 onTaskClick={handleTaskClick}
+                onStatusChange={updateTaskStatus.mutate}
                 isFullWidth
               />
             </div>
@@ -168,6 +175,7 @@ const ProjectDetails = () => {
                 title="Done"
                 tasks={tasks.filter((task) => task.status === "Done")}
                 onTaskClick={handleTaskClick}
+                onStatusChange={updateTaskStatus.mutate}
                 isFullWidth
               />
             </div>
@@ -175,12 +183,11 @@ const ProjectDetails = () => {
         </Tabs>
       </div>
 
-      {/* create    task dialog */}
       <CreateTaskDialog
         open={isCreateTask}
         onOpenChange={setIsCreateTask}
         projectId={projectId!}
-        projectMembers={workspaceMembers as any} // Changed from project.members to workspaceMembers
+        projectMembers={workspaceMembers as any}
       />
     </div>
   );
@@ -192,6 +199,7 @@ interface TaskColumnProps {
   title: string;
   tasks: Task[];
   onTaskClick: (taskId: string) => void;
+  onStatusChange?: (data: { taskId: string; status: TaskStatus }) => void;
   isFullWidth?: boolean;
 }
 
@@ -199,13 +207,14 @@ const TaskColumn = ({
   title,
   tasks,
   onTaskClick,
+  onStatusChange,
   isFullWidth = false,
 }: TaskColumnProps) => {
   return (
     <div
       className={
         isFullWidth
-          ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+          ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4"
           : ""
       }
     >
@@ -225,7 +234,7 @@ const TaskColumn = ({
         <div
           className={cn(
             "space-y-3",
-            isFullWidth && "grid grid-cols-2 lg:grid-cols-3 gap-4"
+            isFullWidth && "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4"
           )}
         >
           {tasks.length === 0 ? (
@@ -238,6 +247,7 @@ const TaskColumn = ({
                 key={task._id}
                 task={task}
                 onClick={() => onTaskClick(task._id)}
+                onStatusChange={onStatusChange}
               />
             ))
           )}
@@ -247,7 +257,20 @@ const TaskColumn = ({
   );
 };
 
-const TaskCard = ({ task, onClick }: { task: Task; onClick: () => void }) => {
+const TaskCard = ({
+  task,
+  onClick,
+  onStatusChange,
+}: {
+  task: Task;
+  onClick: () => void;
+  onStatusChange?: (data: { taskId: string; status: TaskStatus }) => void;
+}) => {
+  const handleStatusClick = (e: React.MouseEvent, status: TaskStatus) => {
+    e.stopPropagation();
+    onStatusChange?.({ taskId: task._id, status });
+  };
+
   return (
     <Card
       onClick={onClick}
@@ -273,9 +296,7 @@ const TaskCard = ({ task, onClick }: { task: Task; onClick: () => void }) => {
                 variant={"ghost"}
                 size={"icon"}
                 className="size-6"
-                onClick={() => {
-                  console.log("mark as to do");
-                }}
+                onClick={(e) => handleStatusClick(e, "To Do")}
                 title="Mark as To Do"
               >
                 <AlertCircle className={cn("size-4")} />
@@ -287,9 +308,7 @@ const TaskCard = ({ task, onClick }: { task: Task; onClick: () => void }) => {
                 variant={"ghost"}
                 size={"icon"}
                 className="size-6"
-                onClick={() => {
-                  console.log("mark as in progress");
-                }}
+                onClick={(e) => handleStatusClick(e, "In Progress")}
                 title="Mark as In Progress"
               >
                 <Clock className={cn("size-4")} />
@@ -301,9 +320,7 @@ const TaskCard = ({ task, onClick }: { task: Task; onClick: () => void }) => {
                 variant={"ghost"}
                 size={"icon"}
                 className="size-6"
-                onClick={() => {
-                  console.log("mark as done");
-                }}
+                onClick={(e) => handleStatusClick(e, "Done")}
                 title="Mark as Done"
               >
                 <CheckCircle className={cn("size-4")} />
@@ -315,7 +332,7 @@ const TaskCard = ({ task, onClick }: { task: Task; onClick: () => void }) => {
       </CardHeader>
 
       <CardContent>
-        <h4 className="ont-medium mb-2">{task.title}</h4>
+        <h4 className="font-medium mb-2">{task.title}</h4>
 
         {task.description && (
           <p className="text-sm text-muted-foreground line-clamp-2 mb-2">

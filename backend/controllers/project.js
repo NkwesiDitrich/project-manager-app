@@ -104,8 +104,10 @@ const getProjectTasks = async (req, res) => {
       });
     }
 
-    // NEW: Fetch all workspace members to allow assigning tasks to anyone in the workspace
-    const workspace = await Workspace.findById(project.workspace).populate("members.user", "name email profilePicture");
+    const workspace = await Workspace.findById(project.workspace).populate(
+      "members.user",
+      "name email profilePicture"
+    );
 
     const tasks = await Task.find({
       project: projectId,

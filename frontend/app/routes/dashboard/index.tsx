@@ -19,7 +19,6 @@ const Dashboard = () => {
   const [searchParams] = useSearchParams();
   const workspaceId = searchParams.get("workspaceId");
 
-  // Fetch stats - this query is automatically disabled if workspaceId is null
   const { data, isPending } = useGetWorkspaceStatsQuery(workspaceId as string) as {
     data: {
       stats: StatsCardProps;
@@ -33,41 +32,45 @@ const Dashboard = () => {
     isPending: boolean;
   };
 
-  // 1. FIRST CHECK: If no workspace is selected, show the Welcome screen immediately.
-  // This prevents the app from trying to load data that doesn't exist.
   if (!workspaceId || workspaceId === "null") {
     return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <div className="text-center space-y-4">
-          <h1 className="text-3xl font-bold text-gray-800">Welcome to Tasco!</h1>
-          <p className="text-gray-500 max-w-md mx-auto">
-            It looks like you haven't selected a workspace yet. 
-            Please <strong>create a new workspace</strong> or select an existing one from the header to view your dashboard statistics.
-          </p>
-        </div>
+      <div className="flex min-h-[60vh] flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 p-8 text-center">
+        <h1 className="text-2xl font-semibold text-foreground">
+          Welcome to Tasco
+        </h1>
+        <p className="mt-2 max-w-md text-sm text-muted-foreground">
+          Select a workspace from the header or create a new one to see your
+          dashboard and statistics.
+        </p>
       </div>
     );
   }
 
-  // 2. SECOND CHECK: Show loader only if we have a workspaceId but the data is still fetching.
   if (isPending) {
     return (
-      <div className="flex h-full items-center justify-center">
+      <div className="flex min-h-[40vh] items-center justify-center">
         <Loader />
       </div>
     );
   }
 
-  // 3. THIRD CHECK: Safety check for missing data
-  if (!data || !data.stats) {
-    return <div className="text-center p-10">No data found for this workspace.</div>;
+  if (!data?.stats) {
+    return (
+      <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
+        No data for this workspace yet.
+      </div>
+    );
   }
 
-  // 4. FINAL RENDER: Show the full dashboard
   return (
-    <div className="space-y-8 2xl:space-y-12">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
+    <div className="space-y-6 sm:space-y-8 min-w-0">
+      <div>
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">
+          Dashboard
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Overview of your workspace activity
+        </p>
       </div>
 
       <StatsCard data={data.stats} />

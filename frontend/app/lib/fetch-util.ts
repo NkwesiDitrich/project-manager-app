@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api-v1";
+const BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:3001/api-v1").trim();
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -29,8 +29,20 @@ api.interceptors.response.use(
   }
 );
 
-const postData = async <T>(url: string, data: unknown): Promise<T> => {
-  const response = await api.post(url, data);
+const postData = async <T>(
+  url: string,
+  data: unknown,
+  isFormData: boolean = false
+): Promise<T> => {
+  const config = isFormData
+    ? {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    : {};
+
+  const response = await api.post(url, data, config);
 
   return response.data;
 };

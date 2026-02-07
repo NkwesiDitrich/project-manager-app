@@ -9,6 +9,7 @@ import {
   getWorkspaces,
   getWorkspaceStats,
   inviteUserToWorkspace,
+  removeMember,
 } from "../controllers/workspace.js";
 import {
   inviteMemberSchema,
@@ -53,8 +54,15 @@ router.post(
 
 router.get("/", authMiddleware, getWorkspaces);
 
-router.get("/:workspaceId", authMiddleware, getWorkspaceDetails);
 router.get("/:workspaceId/projects", authMiddleware, getWorkspaceProjects);
 router.get("/:workspaceId/stats", authMiddleware, getWorkspaceStats);
+router.get("/:workspaceId", authMiddleware, getWorkspaceDetails);
+
+// Remove a member (owner only)
+router.delete(
+  "/:workspaceId/members/:userId",
+  authMiddleware,
+  removeMember
+);
 
 export default router;

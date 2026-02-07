@@ -2,8 +2,9 @@ import { Loader2 } from "lucide-react";
 
 export const Loader = () => {
   return (
-    <div className="flex items-center justify-center h-full">
-      <Loader2 className="w-10 h-10 animate-spin" />
+    <div className="flex flex-col items-center justify-center gap-3 py-12">
+      <Loader2 className="size-10 animate-spin text-primary" aria-hidden />
+      <span className="text-sm text-muted-foreground">Loading…</span>
     </div>
   );
 };
