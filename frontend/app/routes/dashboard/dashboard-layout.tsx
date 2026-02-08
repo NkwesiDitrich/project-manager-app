@@ -1,3 +1,7 @@
+/**
+ * App shell for logged-in users: sidebar, header (workspace switcher, user menu), and main content.
+ * Loads workspaces once for the layout; child routes render inside the Outlet.
+ */
 import { Header } from "@/components/layout/header";
 import { SidebarComponent } from "@/components/layout/sidebar-component";
 import { Loader } from "@/components/loader";
@@ -8,6 +12,7 @@ import type { Workspace } from "@/types";
 import { useEffect, useState } from "react";
 import { Navigate, Outlet, useLoaderData, useLocation } from "react-router";
 
+/** Preload workspaces for the layout so header and sidebar can use them without extra requests. */
 export const clientLoader = async () => {
   try {
     const [workspaces] = await Promise.all([

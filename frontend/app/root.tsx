@@ -1,3 +1,7 @@
+/**
+ * Root layout: HTML shell, global styles, fonts, and providers.
+ * Outlet renders the active route. ErrorBoundary handles route errors and 404s.
+ */
 import {
   isRouteErrorResponse,
   Links,
@@ -50,6 +54,7 @@ export default function App() {
   );
 }
 
+/** Renders when a route throws or returns an error (e.g. 404 or server error). */
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   let message = "Oops!";
   let details = "An unexpected error occurred.";

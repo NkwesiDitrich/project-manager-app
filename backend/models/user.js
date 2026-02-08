@@ -1,5 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 
+/** User model: auth (email, password), profile (name, profilePicture), and gamification (xp, level, streak). */
 const userSchema = new Schema(
   {
     email: { type: String, required: true, unique: true, trim: true, lowercase: true },

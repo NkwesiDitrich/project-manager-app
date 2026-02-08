@@ -1,14 +1,17 @@
+/**
+ * Central API client for the backend. All requests use this base URL and send
+ * the JWT from localStorage when present. On 401, the auth provider logs the user out.
+ */
 import axios from "axios";
 
 const BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:3001/api-v1").trim();
 
 const api = axios.create({
   baseURL: BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  headers: { "Content-Type": "application/json" },
 });
 
+// Attach JWT to every request so protected routes receive Authorization: Bearer <token>
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
@@ -17,12 +20,11 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Add a global handler for 401 errors
+// On 401 Unauthorized, notify the app to clear token and redirect to sign-in
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      // Dispatch a custom event to trigger logout in AuthProvider
+    if (error.response?.status === 401) {
       window.dispatchEvent(new Event("force-logout"));
     }
     return Promise.reject(error);

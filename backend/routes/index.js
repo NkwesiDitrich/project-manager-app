@@ -1,3 +1,7 @@
+/**
+ * Central API router. Mounts feature routes under /api-v1 (see main index.js).
+ * Each file defines its own sub-routes (e.g. /auth/login, /workspaces/:id).
+ */
 import express from "express";
 
 import authRoutes from "./auth.js";

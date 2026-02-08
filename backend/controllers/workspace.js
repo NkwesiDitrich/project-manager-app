@@ -1,3 +1,7 @@
+/**
+ * Workspace controller: create workspace, list/details, invite members, accept invite,
+ * remove member, and stats. All handlers use req.user from auth middleware.
+ */
 import Workspace from "../models/workspace.js";
 import Project from "../models/project.js";
 import User from "../models/user.js";

@@ -1,3 +1,7 @@
+/**
+ * Protects routes that require a logged-in user.
+ * Expects Authorization: Bearer <jwt>. Verifies the token and attaches the user to req.user.
+ */
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 
@@ -17,18 +21,14 @@ const authMiddleware = async (req, res, next) => {
     const user = await User.findById(decoded.userId);
 
     if (!user) {
-      return res.status(401).json({
-        message: "Unauthorized",
-      });
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
     req.user = user;
     next();
   } catch (error) {
     console.log(error);
-    res.status(500).json({
-      message: "Internal server error",
-    });
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 

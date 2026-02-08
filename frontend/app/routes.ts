@@ -1,3 +1,7 @@
+/**
+ * Route tree: auth (sign-in, sign-up, verify, reset), dashboard (workspaces, projects, tasks, chat, etc.),
+ * and user profile. Auth layout guards unauthenticated pages; dashboard layout wraps app shell and sidebar.
+ */
 import {
   type RouteConfig,
   index,
