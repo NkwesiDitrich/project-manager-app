@@ -167,7 +167,11 @@ All API routes are prefixed with `/api-v1`.
 Protected routes require the `Authorization: Bearer <token>` header. The frontend stores the token after login and sends it with each request.
 
 ---
+## credentials
 
+- Admin dashboard
+  - Email: `hackergeek55@gmail.com`
+  - Password: `123445678`
 ## License
 
 **Educational Use Only License (Non-Commercial)**
