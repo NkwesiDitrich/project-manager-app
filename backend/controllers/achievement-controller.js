@@ -106,22 +106,42 @@ export const seedBadges = async (req, res) => {
   try {
     const badges = [
       {
-        name: "Task Master",
-        description: "Complete 50 tasks",
-        icon: "Trophy",
+        name: "Task Beginner",
+        description: "Complete 5 tasks",
+        icon: "CheckCircle",
         category: "Productivity",
         tier: "Bronze",
-        criteria: { type: "tasks_completed", value: 50 },
-        xpReward: 500,
+        criteria: { type: "task_count", value: 5 },
+        xpReward: 50,
+        pointsReward: 25
+      },
+      {
+        name: "Task Master",
+        description: "Complete 20 tasks",
+        icon: "Trophy",
+        category: "Productivity",
+        tier: "Silver",
+        criteria: { type: "task_count", value: 20 },
+        xpReward: 200,
         pointsReward: 100
+      },
+      {
+        name: "Streak King",
+        description: "Maintain a 7-day task completion streak",
+        icon: "Flame",
+        category: "Productivity",
+        tier: "Gold",
+        criteria: { type: "streak", value: 7 },
+        xpReward: 300,
+        pointsReward: 150
       },
       {
         name: "Task Grandmaster",
         description: "Complete 100 tasks",
         icon: "Crown",
         category: "Productivity",
-        tier: "Silver",
-        criteria: { type: "tasks_completed", value: 100 },
+        tier: "Gold",
+        criteria: { type: "task_count", value: 100 },
         xpReward: 1000,
         pointsReward: 250
       }
@@ -133,6 +153,7 @@ export const seedBadges = async (req, res) => {
 
     res.status(200).json({ message: "Badges seeded successfully" });
   } catch (error) {
+    console.error("Error seeding badges:", error);
     res.status(500).json({ message: "Error seeding badges" });
   }
 };

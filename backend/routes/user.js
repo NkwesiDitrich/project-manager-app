@@ -5,12 +5,14 @@ import {
   getUserProfile,
   updateUserProfile,
 } from "../controllers/user.js";
+import { getAchievements } from "../controllers/achievement-controller.js";
 import { z } from "zod";
 import { validateRequest } from "zod-express-middleware";
 
 const router = express.Router();
 
 router.get("/profile", authenticateUser, getUserProfile);
+router.get("/achievements", authenticateUser, getAchievements);
 router.put(
   "/profile",
   authenticateUser,

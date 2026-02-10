@@ -201,13 +201,33 @@ const updateTaskStatus = async (req, res) => {
     if (!task) return res.status(404).json({ message: "Task not found" });
 
     const oldStatus = task.status;
+    const isCompletingTask = oldStatus !== "Done" && status === "Done";
+    
     task.status = status;
+    
+    // Set completedAt timestamp when task is marked as Done
+    if (status === "Done" && !task.completedAt) {
+      task.completedAt = new Date();
+    } else if (status !== "Done") {
+      task.completedAt = null;
+    }
+    
     await task.save();
 
-    // 1. DYNAMIC XP LOGIC (Recalculate for everyone involved)
-    await updateGamification(req.user._id); // Reward the performer
-    const updatePromises = task.assignees.map(userId => updateGamification(userId));
-    await Promise.all(updatePromises);
+    // 1. GAMIFICATION & BADGE EVALUATION
+    if (isCompletingTask) {
+      // Task is newly completed - update gamification with streak for all assignees
+      const updatePromises = task.assignees.map(async (userId) => {
+        return await updateGamification(userId, true); // true = update streak
+      });
+      await Promise.all(updatePromises);
+    } else if (status === "Done") {
+      // Task was already Done, just recalculate XP/level/badges (no streak update)
+      const updatePromises = task.assignees.map(userId => 
+        updateGamification(userId, false) // false = don't update streak
+      );
+      await Promise.all(updatePromises);
+    }
 
     // 2. NOTIFICATIONS
     if (status === "Done") {
@@ -221,6 +241,7 @@ const updateTaskStatus = async (req, res) => {
 
     res.status(200).json(task);
   } catch (error) {
+    console.error("Error updating task status:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };

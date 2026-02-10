@@ -9,4 +9,7 @@ const userBadgeSchema = new Schema(
   { timestamps: true }
 );
 
+// Prevent duplicate badge awards - ensure one user can only earn a badge once
+userBadgeSchema.index({ user: 1, badge: 1 }, { unique: true });
+
 export default mongoose.model("UserBadge", userBadgeSchema);
