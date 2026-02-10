@@ -171,7 +171,7 @@ Protected routes require the `Authorization: Bearer <token>` header. The fronten
 
 - Admin dashboard
   - Email: `hackergeek55@gmail.com`
-  - Password: `123445678`
+  - Password: `12345678`
 ## License
 
 **Educational Use Only License (Non-Commercial)**
