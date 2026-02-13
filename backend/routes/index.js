@@ -11,6 +11,7 @@ import projectRoutes from "./project.js";
 import taskRoutes from "./task.js";
 import userRoutes from "./user.js";
 import achievementRoutes from "./achievement.js";
+import notificationRoutes from "./notification.js";
 
 const router = express.Router();
 
@@ -21,5 +22,6 @@ router.use("/tasks", taskRoutes);
 router.use("/users", userRoutes);
 router.use("/achievements", achievementRoutes);
 router.use("/chat", chatRoutes);
+router.use("/notifications", notificationRoutes);
 
 export default router;

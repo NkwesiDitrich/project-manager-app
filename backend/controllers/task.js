@@ -5,7 +5,7 @@ import Project from "../models/project.js";
 import Task from "../models/task.js";
 import Workspace from "../models/workspace.js";
 import { updateGamification } from "../libs/gamification.js";
-import { createNotification } from "./notification-controller.js";
+import { createNotification, createNotifications } from "./notification-controller.js";
 
 const createTask = async (req, res) => {
   try {
@@ -52,6 +52,30 @@ const createTask = async (req, res) => {
 
     project.tasks.push(newTask._id);
     await project.save();
+
+    // Log activity (non-blocking)
+    recordActivity(req.user._id, "created_task", "Task", newTask._id, {
+      description: `created task "${title}"`,
+    }).catch((err) => console.error("Activity logging error:", err));
+
+    // Send notifications to assigned users (non-blocking)
+    if (assignees && assignees.length > 0) {
+      const notificationPromises = assignees
+        .filter((assigneeId) => assigneeId.toString() !== req.user._id.toString())
+        .map((assigneeId) =>
+          createNotification(
+            assigneeId,
+            req.user._id,
+            "task_assigned",
+            "Task Assigned",
+            `You have been assigned to task "${title}"`,
+            newTask._id
+          )
+        );
+      Promise.all(notificationPromises).catch((err) =>
+        console.error("Notification error:", err)
+      );
+    }
 
     res.status(201).json(newTask);
   } catch (error) {
@@ -276,15 +300,38 @@ const updateTaskAssignees = async (req, res) => {
       });
     }
 
-    const oldAssignees = task.assignees;
+    const oldAssignees = task.assignees.map((id) => id.toString());
+    const newAssignees = assignees.map((id) => id.toString());
+
+    // Find newly assigned users
+    const newlyAssigned = newAssignees.filter(
+      (id) => !oldAssignees.includes(id)
+    );
 
     task.assignees = assignees;
     await task.save();
 
-    // record activity
-    await recordActivity(req.user._id, "updated_task", "Task", taskId, {
+    // Log activity (non-blocking)
+    recordActivity(req.user._id, "updated_task", "Task", taskId, {
       description: `updated task assignees from ${oldAssignees.length} to ${assignees.length}`,
-    });
+    }).catch((err) => console.error("Activity logging error:", err));
+
+    // Send notifications to newly assigned users (non-blocking)
+    if (newlyAssigned.length > 0) {
+      const notificationPromises = newlyAssigned.map((assigneeId) =>
+        createNotification(
+          assigneeId,
+          req.user._id,
+          "task_assigned",
+          "Task Assigned",
+          `You have been assigned to task "${task.title}"`,
+          taskId
+        )
+      );
+      Promise.all(notificationPromises).catch((err) =>
+        console.error("Notification error:", err)
+      );
+    }
 
     res.status(200).json(task);
   } catch (error) {

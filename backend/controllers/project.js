@@ -1,6 +1,8 @@
 import Workspace from "../models/workspace.js";
 import Project from "../models/project.js";
 import Task from "../models/task.js";
+import { recordActivity } from "../libs/index.js";
+import { createNotification } from "./notification-controller.js";
 
 const createProject = async (req, res) => {
   try {
@@ -42,6 +44,33 @@ const createProject = async (req, res) => {
 
     workspace.projects.push(newProject._id);
     await workspace.save();
+
+    // Log activity (non-blocking)
+    recordActivity(req.user._id, "created_project", "Project", newProject._id, {
+      description: `created project "${title}"`,
+    }).catch((err) => console.error("Activity logging error:", err));
+
+    // Send notifications to workspace members (non-blocking)
+    // Notify all workspace members except the creator
+    const workspaceMembers = workspace.members
+      .map((member) => member.user.toString())
+      .filter((memberId) => memberId !== req.user._id.toString());
+
+    if (workspaceMembers.length > 0) {
+      const notificationPromises = workspaceMembers.map((memberId) =>
+        createNotification(
+          memberId,
+          req.user._id,
+          "project_added",
+          "New Project Created",
+          `A new project "${title}" has been created in workspace "${workspace.name}"`,
+          newProject._id
+        )
+      );
+      Promise.all(notificationPromises).catch((err) =>
+        console.error("Notification error:", err)
+      );
+    }
 
     return res.status(201).json(newProject);
   } catch (error) {

@@ -9,6 +9,7 @@ import WorkspaceInvite from "../models/workspace-invite.js";
 import jwt from "jsonwebtoken";
 import { sendEmail } from "../libs/send-email.js";
 import { recordActivity } from "../libs/index.js";
+import { createNotification } from "./notification-controller.js";
 
 const createWorkspace = async (req, res) => {
   try {
@@ -27,6 +28,11 @@ const createWorkspace = async (req, res) => {
         },
       ],
     });
+
+    // Log activity (non-blocking)
+    recordActivity(req.user._id, "created_workspace", "Workspace", workspace._id, {
+      description: `created workspace "${name}"`,
+    }).catch((err) => console.error("Activity logging error:", err));
 
     res.status(201).json(workspace);
   } catch (error) {
@@ -402,11 +408,22 @@ const inviteUserToWorkspace = async (req, res) => {
       <p>Click here to join: <a href="${invitationLink}">${invitationLink}</a></p>
     `;
 
+    // Send email notification
     await sendEmail(
       email,
       "You have been invited to join a workspace",
       emailContent
-    );
+    ).catch((err) => console.error("Email sending error:", err));
+
+    // Send in-app notification (non-blocking)
+    createNotification(
+      existingUser._id,
+      req.user._id,
+      "workspace_invite",
+      "Workspace Invitation",
+      `You have been invited to join workspace "${workspace.name}"`,
+      workspaceId
+    ).catch((err) => console.error("Notification error:", err));
 
     res.status(200).json({
       message: "Invitation sent successfully",
