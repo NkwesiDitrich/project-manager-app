@@ -47,18 +47,31 @@ export const useInviteMemberMutation = () => {
 };
 
 export const useAcceptInviteByTokenMutation = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (token: string) =>
       postData(`/workspaces/accept-invite-token`, {
         token,
       }),
+    onSuccess: (_data, _variables) => {
+      // Refresh workspace lists and details after accepting invite
+      queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+      queryClient.invalidateQueries({ queryKey: ["workspace"] });
+    },
   });
 };
 
 export const useAcceptGenerateInviteMutation = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (workspaceId: string) =>
       postData(`/workspaces/${workspaceId}/accept-generate-invite`, {}),
+    onSuccess: (_data, workspaceId) => {
+      queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+      queryClient.invalidateQueries({
+        queryKey: ["workspace", workspaceId, "details"],
+      });
+    },
   });
 };
 
