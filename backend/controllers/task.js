@@ -225,22 +225,25 @@ const updateTaskStatus = async (req, res) => {
     if (!task) return res.status(404).json({ message: "Task not found" });
 
     const oldStatus = task.status;
-    const isCompletingTask = oldStatus !== "Done" && status === "Done";
-    
+    const hadCompletedAtBefore = !!task.completedAt;
+    // A task is "newly completed" only if it was not previously completed at all
+    const isNewlyCompleted =
+      oldStatus !== "Done" && status === "Done" && !hadCompletedAtBefore;
+
     task.status = status;
     
-    // Set completedAt timestamp when task is marked as Done
-    if (status === "Done" && !task.completedAt) {
+    // Set completedAt only the first time the task is ever marked as Done.
+    // Do NOT clear it when moving away from Done – this prevents streak cheating
+    // by toggling the same previously-completed task back and forth.
+    if (status === "Done" && !hadCompletedAtBefore) {
       task.completedAt = new Date();
-    } else if (status !== "Done") {
-      task.completedAt = null;
     }
     
     await task.save();
 
     // 1. GAMIFICATION & BADGE EVALUATION
-    if (isCompletingTask) {
-      // Task is newly completed - update gamification with streak for all assignees
+    if (isNewlyCompleted) {
+      // Task is newly completed (first time ever) - update gamification with streak for all assignees
       const updatePromises = task.assignees.map(async (userId) => {
         return await updateGamification(userId, true); // true = update streak
       });

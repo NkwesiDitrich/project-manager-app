@@ -14,6 +14,11 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { WorkspaceAvatar } from "../workspace/workspace-avatar";
+import {
+  useMarkAllNotificationsReadMutation,
+  useMarkNotificationReadMutation,
+  useNotificationsQuery,
+} from "@/hooks/use-notifications";
 
 interface HeaderProps {
   onWorkspaceSelected: (workspace: Workspace) => void;
@@ -33,6 +38,11 @@ export const Header = ({
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const isOnWorkspacePage = useLocation().pathname.includes("/workspace");
+
+  const { data: notifications = [] } = useNotificationsQuery();
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const { mutate: markRead } = useMarkNotificationReadMutation();
+  const { mutate: markAllRead } = useMarkAllNotificationsReadMutation();
 
   const handleWorkspaceClick = (workspace: Workspace) => {
     onWorkspaceSelected(workspace);
@@ -110,14 +120,66 @@ export const Header = ({
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-9 rounded-lg text-muted-foreground hover:text-foreground"
-            aria-label="Notifications"
-          >
-            <Bell className="size-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative size-9 rounded-lg text-muted-foreground hover:text-foreground"
+                aria-label="Notifications"
+              >
+                <Bell className="size-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80 rounded-xl">
+              <DropdownMenuLabel className="flex items-center justify-between text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <span>Notifications</span>
+                {notifications.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => markAllRead()}
+                    className="text-[11px] font-semibold text-primary hover:underline"
+                  >
+                    Mark all as read
+                  </button>
+                )}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {notifications.length === 0 ? (
+                <div className="px-3 py-4 text-xs text-muted-foreground">
+                  No notifications yet.
+                </div>
+              ) : (
+                <div className="max-h-80 overflow-y-auto">
+                  {notifications.map((notif) => (
+                    <button
+                      key={notif._id}
+                      type="button"
+                      onClick={() => markRead(notif._id)}
+                      className={`flex w-full items-start gap-2 px-3 py-2 text-left text-sm ${
+                        notif.isRead ? "bg-background" : "bg-muted/60"
+                      } hover:bg-muted`}
+                    >
+                      <div className="mt-1 h-2 w-2 rounded-full bg-primary" />
+                      <div className="flex-1">
+                        <div className="text-xs font-semibold">
+                          {notif.title}
+                        </div>
+                        <div className="text-xs text-muted-foreground line-clamp-2">
+                          {notif.message}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
