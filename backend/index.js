@@ -17,12 +17,14 @@ dotenv.config();
 
 const app = express();
 
-// CORS: only allow requests from the frontend URL (set in FRONTEND_URL)
+// CORS: allow requests from the frontend URL (set in FRONTEND_URL)
+// If FRONTEND_URL is not set, allow all origins (for development/testing)
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    origin: process.env.FRONTEND_URL || true, // Allow all origins if FRONTEND_URL not set
     methods: ["GET", "POST", "DELETE", "PUT"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
   })
 );
 app.use(morgan("dev"));
